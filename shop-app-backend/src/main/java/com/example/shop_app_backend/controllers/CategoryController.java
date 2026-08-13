@@ -51,6 +51,7 @@ public class CategoryController {
         return ResponseEntity.ok("Insert category successfully");
     }
 
+    @PutMapping("/{id}")
     public ResponseEntity<String> updateCategory(
             @PathVariable Long id,
             @Valid @RequestBody CategoryDTO categoryDTO
