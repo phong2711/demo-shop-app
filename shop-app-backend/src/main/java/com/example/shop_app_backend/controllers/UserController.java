@@ -48,8 +48,12 @@ public class UserController {
     @PostMapping("/login")
     public ResponseEntity<String> login(
             @Valid @RequestBody UserLoginDTO userLoginDTO) {
-        // Kiểm tra thông tin đăng nhập và sinh token
-        // Trả về token trong response
-        return ResponseEntity.ok("some token");
+        try {
+            String token = userService.login(userLoginDTO.getPhoneNumber(), userLoginDTO.getPassword());
+            // Trả về token trong response
+            return ResponseEntity.ok(token);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
     }
 }

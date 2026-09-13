@@ -1,5 +1,6 @@
 package com.example.shop_app_backend.services;
 
+import com.example.shop_app_backend.components.JwtTokenUtil;
 import com.example.shop_app_backend.dtos.UserDTO;
 import com.example.shop_app_backend.exceptions.DataNotFoundException;
 import com.example.shop_app_backend.models.Role;
@@ -8,8 +9,13 @@ import com.example.shop_app_backend.repositories.RoleRepository;
 import com.example.shop_app_backend.repositories.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -17,6 +23,9 @@ public class UserService implements IUserService{
     private final UserRepository userRepository;
     private final RoleRepository roleRepository;
     private final PasswordEncoder passwordEncoder;
+    private final AuthenticationManager authenticationManager;
+    private final JwtTokenUtil jwtTokenUtil;
+
 
     @Override
     public User createUser(UserDTO userDTO) throws DataNotFoundException {
@@ -51,8 +60,26 @@ public class UserService implements IUserService{
     }
 
     @Override
-    public String login(String phoneNumber, String password) {
-        //đoạn này liên quan nhiều đến security, sẽ làm trong phần security
-        return null;
+    public String login(String phoneNumber, String password) throws Exception{
+        Optional<User> optionalUser = userRepository.findByPhoneNumber(phoneNumber);
+        if(optionalUser.isEmpty()) {
+            throw new DataNotFoundException("Invalid phone number / password");
+        }
+
+        User existingUser = optionalUser.get();
+        // Kiểm tra nếu có accountId, không yêu cầu password
+        if (existingUser.getFacebookAccountId() == 0
+                && existingUser.getGoogleAccountId() == 0) {
+            if(!passwordEncoder.matches(password, existingUser.getPassword())) {
+                throw new BadCredentialsException("Wrong phone number or password");
+            }
+        }
+
+        UsernamePasswordAuthenticationToken authenticationToken = new UsernamePasswordAuthenticationToken(
+                phoneNumber, password, existingUser.getAuthorities());
+
+        // authenticate with Java Spring security
+        authenticationManager.authenticate(authenticationToken);
+        return jwtTokenUtil.generateToken(existingUser);
     }
 }

@@ -1,5 +1,6 @@
 package com.example.shop_app_backend;
 
+import io.jsonwebtoken.io.Encoders;
 import jakarta.xml.bind.DatatypeConverter;
 import org.junit.jupiter.api.Test;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -7,6 +8,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.security.SecureRandom;
 
 public class EncryptionAndHashingTest {
     @Test
@@ -28,5 +30,14 @@ public class EncryptionAndHashingTest {
         PasswordEncoder passwordEncoder = new BCryptPasswordEncoder(10);
         System.out.println("BCrypt round 1: {}" + passwordEncoder.encode(password));
         System.out.println("BCrypt round 2: {}" + passwordEncoder.encode(password));
+    }
+
+    @Test
+    void generateSecretKey() {
+        SecureRandom random = new SecureRandom();
+        byte[] keyBytes = new byte[32]; // 256-bit key
+        random.nextBytes(keyBytes);
+        String secretKey = Encoders.BASE64.encode(keyBytes);
+        System.out.println("secretKey: " + secretKey);
     }
 }
