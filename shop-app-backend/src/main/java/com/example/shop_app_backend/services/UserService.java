@@ -8,6 +8,7 @@ import com.example.shop_app_backend.repositories.RoleRepository;
 import com.example.shop_app_backend.repositories.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -15,6 +16,8 @@ import org.springframework.stereotype.Service;
 public class UserService implements IUserService{
     private final UserRepository userRepository;
     private final RoleRepository roleRepository;
+    private final PasswordEncoder passwordEncoder;
+
     @Override
     public User createUser(UserDTO userDTO) throws DataNotFoundException {
         // Kiểm tra xem số điện thoại đã tồn tại hay chưa
@@ -40,10 +43,9 @@ public class UserService implements IUserService{
 
         // Kiểm tra nếu có accountId, không yêu cầu password
         if (userDTO.getFacebookAccountId() == 0 && userDTO.getGoogleAccountId() == 0) {
-            //String password = userDTO.getPassword();
-            //String encodedPassword = passwordEncoder.encode(password);
-            //sẽ nói đến trong phần spring security
-            //newUser.setPassword(encodedPassword);
+            String password = userDTO.getPassword();
+            String encodedPassword = passwordEncoder.encode(password);
+            newUser.setPassword(encodedPassword);
         }
         return userRepository.save(newUser);
     }
