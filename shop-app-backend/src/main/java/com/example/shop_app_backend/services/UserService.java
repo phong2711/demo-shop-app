@@ -3,6 +3,7 @@ package com.example.shop_app_backend.services;
 import com.example.shop_app_backend.components.JwtTokenUtil;
 import com.example.shop_app_backend.dtos.UserDTO;
 import com.example.shop_app_backend.exceptions.DataNotFoundException;
+import com.example.shop_app_backend.exceptions.PermissionDenyException;
 import com.example.shop_app_backend.models.Role;
 import com.example.shop_app_backend.models.User;
 import com.example.shop_app_backend.repositories.RoleRepository;
@@ -28,11 +29,18 @@ public class UserService implements IUserService{
 
 
     @Override
-    public User createUser(UserDTO userDTO) throws DataNotFoundException {
+    public User createUser(UserDTO userDTO) throws Exception {
         // Kiểm tra xem số điện thoại đã tồn tại hay chưa
         String phoneNumber = userDTO.getPhoneNumber();
         if(userRepository.existsByPhoneNumber(phoneNumber)) {
             throw new DataIntegrityViolationException("Phone number already exists");
+        }
+
+        // Không được tạo account Admin
+        Role role = roleRepository.findById(userDTO.getRoleId())
+                .orElseThrow(() -> new DataNotFoundException("Role not found"));
+        if(role.getName().toUpperCase().equals(Role.ADMIN)) {
+            throw new PermissionDenyException("You cannot register an admin account");
         }
 
         //convert from userDTO => user
@@ -46,8 +54,6 @@ public class UserService implements IUserService{
                 .googleAccountId(userDTO.getGoogleAccountId())
                 .build();
 
-        Role role = roleRepository.findById(userDTO.getRoleId())
-                .orElseThrow(() -> new DataNotFoundException("Role not found"));
         newUser.setRole(role);
 
         // Kiểm tra nếu có accountId, không yêu cầu password
